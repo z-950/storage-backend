@@ -1,0 +1,16 @@
+{
+  "config": {
+    "service": {
+      "host": "localhost",
+      "database": "center",
+      "port": 5432,
+      "user": "postgres",
+      "password": "postgres",
+      "poolSize": 5
+    },
+    "api": {
+      "host": "0.0.0.0",
+      "port": 8992
+    }
+  }
+}
