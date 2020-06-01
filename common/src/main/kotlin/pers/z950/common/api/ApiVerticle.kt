@@ -21,6 +21,8 @@ import io.vertx.ext.web.sstore.ClusteredSessionStore
 import io.vertx.kotlin.core.http.listenAwait
 import io.vertx.kotlin.core.json.jsonObjectOf
 import kotlinx.coroutines.launch
+import org.apache.shiro.authc.IncorrectCredentialsException
+import org.apache.shiro.authc.UnknownAccountException
 
 abstract class ApiVerticle : MicroServiceVerticle() {
   companion object {
@@ -69,9 +71,12 @@ abstract class ApiVerticle : MicroServiceVerticle() {
       ).apply {
         setCookieHttpOnlyFlag(true)
         setCookieSameSite(CookieSameSite.STRICT)
-        setSessionTimeout(config.getLong("session.timeout",
+        setSessionTimeout(
+          config.getLong(
+            "session.timeout",
             DEFAULT_SESSION_TIMEOUT
-        ))
+          )
+        )
         if (authProvider != null) {
           setAuthProvider(authProvider)
         }
@@ -136,6 +141,10 @@ abstract class ApiVerticle : MicroServiceVerticle() {
             ctx.error(ApiException.ERROR)
             logError(ctx, e)
           }
+        }
+        is IncorrectCredentialsException, is UnknownAccountException -> {
+          ctx.error(ApiException.WRONG_DATA)
+          log.info(ctx, ApiException.WRONG_DATA.message)
         }
         else -> {
           // unknown error

@@ -1,7 +1,6 @@
 package pers.z950.gateway.api
 
 import pers.z950.common.api.*
-import pers.z950.gateway.AuthenticateService
 import io.vertx.circuitbreaker.CircuitBreaker
 import io.vertx.circuitbreaker.CircuitBreakerOptions
 import io.vertx.core.Promise
@@ -26,7 +25,7 @@ import io.vertx.servicediscovery.ServiceDiscovery
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-class GatewayApiVerticle(private val authenticateService: AuthenticateService) : ApiVerticle() {
+class GatewayApiVerticle() : ApiVerticle() {
   companion object {
     const val PROXY_PATH = "/b"
     const val DEFAULT_TIMEOUT = 10_000L
@@ -47,9 +46,12 @@ class GatewayApiVerticle(private val authenticateService: AuthenticateService) :
       vertx,
       CircuitBreakerOptions()
         .setMaxFailures(cbOptions.getInteger("max-failures", 5))
-        .setTimeout(cbOptions.getLong("timeout",
-          DEFAULT_TIMEOUT
-        ))
+        .setTimeout(
+          cbOptions.getLong(
+            "timeout",
+            DEFAULT_TIMEOUT
+          )
+        )
         .setResetTimeout(cbOptions.getLong("reset-timeout", 30_000L))
     )
 
@@ -58,7 +60,6 @@ class GatewayApiVerticle(private val authenticateService: AuthenticateService) :
 
   override suspend fun stop() {
     circuitBreaker.close()
-    authenticateService.close()
     super.stop()
   }
 
@@ -116,15 +117,13 @@ class GatewayApiVerticle(private val authenticateService: AuthenticateService) :
             @Error(403, "no permission")
             authorize(ctx, service)
 
-            // generate new relative path
-            val pathNew = path.substring(service.length)
             // get one relevant HTTP client, may not exist
             val client = recordList.firstOrNull { it.name == "$service-rest-api" }
 
             if (client != null) {
               val httpClient = discovery.getReference(client).get<HttpClient>()
               @Error(500 - 599, "see inside") @Success("see inside")
-              reverseProxy(ctx, pathNew, httpClient, it)
+              reverseProxy(ctx, path, httpClient, it)
             } else {
               @Error(404, "service not found")
               notFoundHandler(ctx)
@@ -177,36 +176,22 @@ class GatewayApiVerticle(private val authenticateService: AuthenticateService) :
   }
 
   // for gateway
-  private suspend fun getAllEndpoints() = discovery.getRecordsAwait { it.type == io.vertx.servicediscovery.types.HttpEndpoint.TYPE }
+  private suspend fun getAllEndpoints() =
+    discovery.getRecordsAwait { it.type == io.vertx.servicediscovery.types.HttpEndpoint.TYPE }
 
   @Controller
   private suspend fun authenticate(ctx: RoutingContext) {
     val body = ctx.bodyAsJson
-    val code: String? = body.getString("code") // get openId
     val username: String? = body.getString("username")
     val password: String? = body.getString("password")
 
-    @Error(400, "code invalid")
-    val openId: String? = null
-// todo:
-//        if (code == null) null
-//        else getOpenIdByCode(ctx.vertx(), code) ?: throw ResponseException.WRONG_DATA
+    val user = shiroAuth.authenticateAwait(jsonObjectOf("username" to username, "password" to password))
 
-    val (id, role) = when {
-      username != null && password != null ->
-        authenticateService.authenticate(username, password, openId) // bind wechat openId
-      openId != null ->
-        authenticateService.authenticate(openId)
-      else ->
-        @Error(400, "no fields")
-        throw ApiException.ILLEGAL_ARGS
-    }
-
-    ctx.setUser(hackShiroAuthnForAuthz(role))
-    ctx.session().put("id", id) // store id, [ShiroUser] only save username in principal (get from session)
+    ctx.setUser(user)
+    val role = hackGetRole()
 
     @Success("user info")
-    ctx.response(jsonObjectOf("id" to id, "role" to role))
+    ctx.response(jsonObjectOf("id" to username, "role" to role))
   }
 
   @Controller
@@ -246,8 +231,11 @@ class GatewayApiVerticle(private val authenticateService: AuthenticateService) :
     }
   }
 
-  // hack for shiroAuth authorize. username & password are role name
+  // hack for shiroAuth authorize. username & password are role name, for tourist
   private suspend fun hackShiroAuthnForAuthz(role: String): User {
     return shiroAuth.authenticateAwait(jsonObjectOf("username" to role, "password" to role))
   }
+
+  // hack for get user role (worker only)
+  private fun hackGetRole() = "worker"
 }

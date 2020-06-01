@@ -45,7 +45,7 @@ in others sub project:
 
 ### run & debug: (in idea)
 1. code generate
-    - choose `backend:pers.z950.codegen` gradle project
+    - choose `backend:codegen` gradle project
     - choose `run` task
     - press `Run` button
 2. start verticle

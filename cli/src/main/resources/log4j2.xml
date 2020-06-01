@@ -3,9 +3,9 @@
 
     <Properties>
         <Property name="LOG_PATH" value="./logs"/>
-        <Property name="LOG_INFO_FILE" value="./logs/center-info.log"/>
-        <Property name="LOG_WARN_FILE" value="./logs/center-warn.log"/>
-        <Property name="LOG_ERROR_FILE" value="./logs/center-error.log"/>
+        <Property name="LOG_INFO_FILE" value="./logs/storage-info.log"/>
+        <Property name="LOG_WARN_FILE" value="./logs/storage-warn.log"/>
+        <Property name="LOG_ERROR_FILE" value="./logs/storage-error.log"/>
         <Property name="CONSOLE_LAYOUT"
                   value="%style{%d{yyyy-MM-dd HH:mm:ss.SSS}}{Blue,Bright} %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=grey, TRACE=blue} %style{%pid}{magenta} --- %style{[%15.15t] %-40.40c{1.}}{cyan,Bright} : %m%n%ex"/>
         <Property name="FILE_LAYOUT"
