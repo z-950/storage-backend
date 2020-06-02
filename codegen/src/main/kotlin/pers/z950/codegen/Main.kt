@@ -207,19 +207,33 @@ fun genJsonPara(function: KFunction<*>): String = function.valueParameters.joinT
   getJsonGetStr(it.type, it.name!!)
 }
 
-// todo: more type
+// todo: map cast
 fun getJsonGetStr(type: KType, key: String): String = when (type.jvmErasure) {
   Boolean::class -> "json.getBoolean(\"$key\")"
-  Byte::class -> "json.getInteger(\"$key\").toByte()"
-  Short::class -> "json.getInteger(\"$key\").toShort()"
   Int::class -> "json.getInteger(\"$key\")"
   Long::class -> "json.getLong(\"$key\")"
   Float::class -> "json.getFloat(\"$key\")"
   Double::class -> "json.getDouble(\"$key\")"
   String::class -> "json.getString(\"$key\")"
-  List::class -> "json.getJsonArray(\"$key\").list as ${getTypeFullSimpleName(type)}"
-  Map::class -> "json.getJsonObject(\"$key\").map as ${getTypeFullSimpleName(type)}"
   JsonObject::class -> "json.getJsonObject(\"$key\")"
   JsonArray::class -> "json.getJsonArray(\"$key\")"
+  List::class -> "json.getJsonArray(\"$key\")${getListCast(type)}"
+  Map::class -> "json.getJsonObject(\"$key\").map${getMapCast(type)}"
   else -> " type" + type.jvmErasure.jvmName + " is not found!!!"
 }
+
+fun getListCast(type: KType): String = when (val generic = type.arguments.first().type!!) {
+  Boolean::class -> ".map{it as Boolean}"
+  Int::class -> ".map{it as Int}"
+  Long::class -> ".map{it as Long}"
+  Float::class -> ".map{it as Float}"
+  Double::class -> ".map{it as Double}"
+  String::class -> ".map{it as String}"
+  JsonObject::class -> ".map{it as JsonObject}"
+  JsonArray::class -> ".map{it as JsonArray}"
+  List::class -> ".map{(it as JsonArray)${getListCast(generic)}}"
+  Map::class -> ".map{it${getMapCast(generic)}}"
+  else -> ".map{(it as JsonObject).mapTo(${getTypeFullSimpleName(generic)}::class.java)}"
+}
+
+fun getMapCast(type: KType):String = " as ${getTypeFullSimpleName(type)}"

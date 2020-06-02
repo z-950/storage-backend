@@ -93,6 +93,13 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
                 )
               )
             }
+            "updateProducts" -> {
+              msg.response(
+                service.updateProducts(
+                  json.getJsonArray("list").map{(it as JsonObject).mapTo(Product::class.java)}
+                )
+              )
+            }
             else -> throw IllegalStateException("Invalid action: $action")
           }
         } catch (t: Throwable) {

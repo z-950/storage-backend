@@ -11,7 +11,6 @@ import pers.z950.order.OrderService
 class OrderApiVerticle(private val service: OrderService) : ApiVerticle() {
   companion object {
     const val SERVICE_NAME = "order-rest-api"
-    const val SERVICE_NAME_IN_AUTH = "pers/z950/order"
   }
 
   override suspend fun start() {

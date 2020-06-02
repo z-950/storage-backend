@@ -120,4 +120,15 @@ create table if not exists $TABLE (
       }
     }
   }
+
+  override suspend fun updateProducts(list: List<Product>) {
+    safeSync { transaction ->
+      list.forEach { product ->
+        val sql = Sql(TABLE).update()
+          .set(TABLE.shelfId to product.shelfId, TABLE.regionId to product.regionId, TABLE.number to product.number)
+          .where { with(it) { TABLE.id eq product.id } }
+        transaction.preparedQueryAwait(sql.get(), sql.tuple)
+      }
+    }
+  }
 }
