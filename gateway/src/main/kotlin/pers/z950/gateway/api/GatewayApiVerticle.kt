@@ -25,7 +25,7 @@ import io.vertx.servicediscovery.ServiceDiscovery
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-class GatewayApiVerticle() : ApiVerticle() {
+class GatewayApiVerticle : ApiVerticle() {
   companion object {
     const val PROXY_PATH = "/b"
     const val DEFAULT_TIMEOUT = 10_000L
@@ -117,13 +117,15 @@ class GatewayApiVerticle() : ApiVerticle() {
             @Error(403, "no permission")
             authorize(ctx, service)
 
+            // generate new relative path
+            val pathNew = path.substring(service.length)
             // get one relevant HTTP client, may not exist
             val client = recordList.firstOrNull { it.name == "$service-rest-api" }
 
             if (client != null) {
               val httpClient = discovery.getReference(client).get<HttpClient>()
               @Error(500 - 599, "see inside") @Success("see inside")
-              reverseProxy(ctx, path, httpClient, it)
+              reverseProxy(ctx, pathNew, httpClient, it)
             } else {
               @Error(404, "service not found")
               notFoundHandler(ctx)
@@ -131,7 +133,6 @@ class GatewayApiVerticle() : ApiVerticle() {
             }
           } catch (e: Throwable) {
             @Error(500, "unknown error, throw by excuteAwait")
-            log.error(e)
             it.fail(e)
           }
         }

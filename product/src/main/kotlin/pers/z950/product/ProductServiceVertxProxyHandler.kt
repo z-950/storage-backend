@@ -79,6 +79,13 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
                 )
               )
             }
+            "patchProduct" -> {
+              msg.response(
+                service.patchProduct(
+                  
+                )
+              )
+            }
             else -> throw IllegalStateException("Invalid action: $action")
           }
         } catch (t: Throwable) {

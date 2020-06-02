@@ -38,19 +38,28 @@ class Sql<T : Table>(private val table: T) {
   /**
    * Insert into
    */
-  fun insert(vararg pairs: Pair<Column, Order>): Sql<T> {
+  fun insert(vararg pairs: Pair<Column, Any>): Sql<T> {
     val fieldNames = pairs.joinToString(",") { "${it.first}" }
-    val values = pairs.joinToString(",") { "${it.first} = $${index++}" }
-    tuple.addValues(pairs.map { it.second }.toTypedArray())
+    val values = pairs.joinToString(",") { "$${index++}" }
+    pairs.forEach { (_, value) ->
+      tuple.addValue(value)
+    }
     sql = "insert into $table ($fieldNames) values (${values}) "
+    return this
+  }
+
+  fun onConflictDoNoting(column: Column): Sql<T> {
+    sql += "on conflict(${column}) do nothing "
     return this
   }
 
   /**
    * Set every field when update.
    */
-  fun set(vararg pairs: Pair<Column, Order>): Sql<T> {
-    tuple.addValues(pairs.map { it.second }.toTypedArray())
+  fun set(vararg pairs: Pair<Column, Any>): Sql<T> {
+    pairs.forEach { (_, value) ->
+      tuple.addValue(value)
+    }
     val fieldNames = pairs.joinToString(",") { "${it.first} = $${index++}" }
     sql += "set $fieldNames "
 

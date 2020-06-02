@@ -37,4 +37,9 @@ class ProductServiceVertxEBProxy constructor(private val vertx: Vertx, private v
     return getEventBusReplyValue("getProduct", jsonArgs)
   }
 
+  override suspend fun patchProduct():Unit {
+    val jsonArgs = jsonObjectOf()
+    return getEventBusReplyValue("patchProduct", jsonArgs)
+  }
+
 }

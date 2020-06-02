@@ -139,12 +139,11 @@ abstract class ApiVerticle : MicroServiceVerticle() {
             logWarn(ctx, e)
           } else {
             ctx.error(ApiException.ERROR)
-            logError(ctx, e)
+            logWarn(ctx, e)
           }
         }
         is IncorrectCredentialsException, is UnknownAccountException -> {
           ctx.error(ApiException.WRONG_DATA)
-          log.info(ctx, ApiException.WRONG_DATA.message)
         }
         else -> {
           // unknown error

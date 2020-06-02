@@ -25,7 +25,7 @@ import java.time.ZonedDateTime
 import java.util.*
 
 abstract class PostgresRepositoryWrapper : AsyncInit,
-    Close {
+  Close {
   companion object {
     const val DEFAULT_DATABASE = "postgres"
 
@@ -48,25 +48,36 @@ abstract class PostgresRepositoryWrapper : AsyncInit,
     val poolSize = config.getInteger(POOL_SIZE_KEY, DEFAULT_MAX_SIZE)
     val database = getNotNullConfig<String>(
       config,
-        DATABASE_KEY
+      DATABASE_KEY
     )
-    val host = getNotNullConfig<String>(config,
-        HOST_KEY
+    val host = getNotNullConfig<String>(
+      config,
+      HOST_KEY
     )
-    val port = getNotNullConfig<Int>(config,
-        PORT_KEY
+    val port = getNotNullConfig<Int>(
+      config,
+      PORT_KEY
     )
-    val user = getNotNullConfig<String>(config,
-        USER_KEY
+    val user = getNotNullConfig<String>(
+      config,
+      USER_KEY
     )
     val password = getNotNullConfig<String>(
       config,
-        PASSWORD_KEY
+      PASSWORD_KEY
     )
 
     checkAndCreateDatabase(vertx, database = database, host = host, port = port, user = user, password = password)
 
-    connectDatabase(vertx, database = database, host = host, port = port, user = user, password = password, poolSize = poolSize)
+    connectDatabase(
+      vertx,
+      database = database,
+      host = host,
+      port = port,
+      user = user,
+      password = password,
+      poolSize = poolSize
+    )
   }
 
   override fun close() {
@@ -78,10 +89,18 @@ abstract class PostgresRepositoryWrapper : AsyncInit,
   private fun <T : Any> getNotNullConfig(config: JsonObject, key: String): T =
     requireNotNull(config.get<T>(key), { "postgres init need config of $key" })
 
-  private suspend fun checkAndCreateDatabase(vertx: Vertx, database: String, host: String, port: Int, user: String, password: String) {
+  private suspend fun checkAndCreateDatabase(
+    vertx: Vertx,
+    database: String,
+    host: String,
+    port: Int,
+    user: String,
+    password: String
+  ) {
     log.info("postgres init {} start, check: [{}]", ::checkAndCreateDatabase.name, database)
 
-    val connectOptions = pgConnectOptionsOf(database = DEFAULT_DATABASE, host = host, port = port, user = user, password = password)
+    val connectOptions =
+      pgConnectOptionsOf(database = DEFAULT_DATABASE, host = host, port = port, user = user, password = password)
     val poolOptions = poolOptionsOf(maxSize = 1)
     val client = PgPool.pool(vertx, connectOptions, poolOptions)
 
@@ -97,8 +116,17 @@ abstract class PostgresRepositoryWrapper : AsyncInit,
     log.info("postgres init {} end, check: [{}]", ::checkAndCreateDatabase.name, database)
   }
 
-  private fun connectDatabase(vertx: Vertx, database: String, host: String, port: Int, user: String, password: String, poolSize: Int) {
-    val connectOptions = pgConnectOptionsOf(database = database, host = host, port = port, user = user, password = password)
+  private fun connectDatabase(
+    vertx: Vertx,
+    database: String,
+    host: String,
+    port: Int,
+    user: String,
+    password: String,
+    poolSize: Int
+  ) {
+    val connectOptions =
+      pgConnectOptionsOf(database = database, host = host, port = port, user = user, password = password)
 
     val poolOptions = poolOptionsOf(maxSize = poolSize)
     pool = PgPool.pool(vertx, connectOptions, poolOptions)
@@ -107,14 +135,24 @@ abstract class PostgresRepositoryWrapper : AsyncInit,
   }
 
   private suspend fun PgPool.queryAwait(sql: String): RowSet<Row> {
-    return awaitResult {
-      this.query(sql).execute(it)
+    try {
+      return awaitResult {
+        this.query(sql).execute(it)
+      }
+    } catch (e: Throwable) {
+      log.warn("error sql: {}, message: {}", sql, e.message)
+      throw e
     }
   }
 
   private suspend fun PgPool.preparedQueryAwait(sql: String, tuple: Tuple): RowSet<Row> {
-    return awaitResult {
-      this.preparedQuery(sql).execute(tuple, it)
+    try {
+      return awaitResult {
+        this.preparedQuery(sql).execute(tuple, it)
+      }
+    } catch (e: Throwable) {
+      log.warn("error sql: {}, message: {}", sql, e.message)
+      throw e
     }
   }
 

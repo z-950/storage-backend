@@ -4,6 +4,9 @@ import pers.z950.common.api.ApiVerticle
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
+import pers.z950.common.api.Controller
+import pers.z950.common.api.Error
+import pers.z950.common.api.Success
 import pers.z950.product.ProductService
 
 class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
@@ -31,13 +34,28 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
   }
 
   private fun dispatch(router: Router) {
-    router.get("/:productId").superHandler(this::get)
+    router.get("/:productId").superHandler { get(it) }
+//    router.patch("/:productId").superHandler { patch(it) }
   }
 
+  @Controller
   private suspend fun get(ctx: RoutingContext) {
+    @Error(400, "required")
     val productId = ctx.pathParam("productId")
-    log.info("receive: $productId")
     val product = service.getProduct(productId)
+
+    @Success
     ctx.response(product)
+  }
+
+  @Controller
+  private suspend fun patch(ctx: RoutingContext) {
+    @Error(400, "required")
+    val productId = ctx.pathParam("productId")
+    // todo
+    service.patchProduct()
+
+    @Success
+    ctx.response(null)
   }
 }
