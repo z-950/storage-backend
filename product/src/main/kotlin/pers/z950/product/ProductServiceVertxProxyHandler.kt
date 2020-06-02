@@ -72,6 +72,13 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
         try {
           when (action) {
             
+            "getAllProduct" -> {
+              msg.response(
+                service.getAllProduct(
+                  
+                )
+              )
+            }
             "getProduct" -> {
               msg.response(
                 service.getProduct(
@@ -79,10 +86,10 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
                 )
               )
             }
-            "patchProduct" -> {
+            "reduceProducts" -> {
               msg.response(
-                service.patchProduct(
-                  
+                service.reduceProducts(
+                  json.getJsonObject("map").map as Map<String,Int>
                 )
               )
             }

@@ -1,13 +1,11 @@
 package pers.z950.order.api
 
-import pers.z950.common.api.ApiException
 import pers.z950.common.api.ApiVerticle
-import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
-import io.vertx.kotlin.coroutines.awaitResult
-import pers.z950.order.Order
+import pers.z950.common.api.Controller
+import pers.z950.common.api.Success
 import pers.z950.order.OrderService
 
 class OrderApiVerticle(private val service: OrderService) : ApiVerticle() {
@@ -16,16 +14,13 @@ class OrderApiVerticle(private val service: OrderService) : ApiVerticle() {
     const val SERVICE_NAME_IN_AUTH = "pers/z950/order"
   }
 
-  private lateinit var shiroAuth: AuthProvider
-
   override suspend fun start() {
     super.start()
 
     val router = Router.router(vertx)
     router.route().handler(BodyHandler.create())
-    shiroAuth = getAuthProvider()
     // cookie and session handler
-    enableClusteredSession(router, shiroAuth)
+    enableClusteredSession(router, getAuthProvider())
 
     dispatch(router)
 
@@ -41,33 +36,26 @@ class OrderApiVerticle(private val service: OrderService) : ApiVerticle() {
   }
 
   private fun dispatch(router: Router) {
-    router.post("/").superHandler { post(it) }
+    router.get("/not-checked").superHandler { getAllNotChecked(it) }
+    router.patch("/:orderId").superHandler { checkOrder(it) }
   }
 
-  // for auth
-  // authorize, use in dispatch
-  private suspend fun authorize(ctx: RoutingContext, level: String) {
-    val method = ctx.request().method().name.toLowerCase()
-    val user = ctx.user()
-    hackUpdatePermission(user)
+  @Controller
+  private suspend fun getAllNotChecked(ctx: RoutingContext) {
+    val res = service.getAllNotChecked()
 
-    val has = awaitResult<Boolean> { user.isAuthorised("$SERVICE_NAME_IN_AUTH:$method:$level", it) }
-
-    if (!has) {
-      throw ApiException.FORBIDDEN
-    }
-  }
-
-  private suspend fun post(ctx: RoutingContext) {
-    authorize(ctx, "self")
-
-    val map = ctx.bodyAsJson.map.mapValues { it.value as Int }
-
-    log.info("receive: {}", map)
-
-//    val res = service.create(map)
-    val res = Order("iiiiiid", mapOf("abc" to 1))
-
+    @Success
     ctx.response(res)
+  }
+
+  @Controller
+  private suspend fun checkOrder(ctx: RoutingContext) {
+    val worker = ctx.user().principal().getString("username")
+    val orderId = ctx.pathParam("orderId").toInt()
+
+    service.checkOrder(orderId, worker)
+
+    @Success
+    ctx.response(null)
   }
 }

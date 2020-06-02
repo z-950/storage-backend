@@ -32,14 +32,19 @@ class ProductServiceVertxEBProxy constructor(private val vertx: Vertx, private v
   }
 
   
+  override suspend fun getAllProduct():List<Product> {
+    val jsonArgs = jsonObjectOf()
+    return getEventBusReplyValue("getAllProduct", jsonArgs)
+  }
+
   override suspend fun getProduct(id:String):Product {
     val jsonArgs = jsonObjectOf("id" to id)
     return getEventBusReplyValue("getProduct", jsonArgs)
   }
 
-  override suspend fun patchProduct():Unit {
-    val jsonArgs = jsonObjectOf()
-    return getEventBusReplyValue("patchProduct", jsonArgs)
+  override suspend fun reduceProducts(map:Map<String,Int>):Unit {
+    val jsonArgs = jsonObjectOf("map" to map)
+    return getEventBusReplyValue("reduceProducts", jsonArgs)
   }
 
 }

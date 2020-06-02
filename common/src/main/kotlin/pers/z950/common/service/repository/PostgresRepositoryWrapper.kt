@@ -134,7 +134,7 @@ abstract class PostgresRepositoryWrapper : AsyncInit,
     log.info("{}, to: [{}], poolSize: {}", ::connectDatabase.name, database, poolSize)
   }
 
-  private suspend fun PgPool.queryAwait(sql: String): RowSet<Row> {
+  private suspend fun SqlClient.queryAwait(sql: String): RowSet<Row> {
     try {
       return awaitResult {
         this.query(sql).execute(it)
@@ -145,7 +145,7 @@ abstract class PostgresRepositoryWrapper : AsyncInit,
     }
   }
 
-  private suspend fun PgPool.preparedQueryAwait(sql: String, tuple: Tuple): RowSet<Row> {
+  suspend fun SqlClient.preparedQueryAwait(sql: String, tuple: Tuple): RowSet<Row> {
     try {
       return awaitResult {
         this.preparedQuery(sql).execute(tuple, it)

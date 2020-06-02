@@ -4,9 +4,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import pers.z950.product.ProductService
 import java.io.File
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KType
+import kotlin.reflect.*
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.jvmErasure
@@ -36,6 +34,18 @@ fun gen() {
     val proxyHandlerFile = File(proxyHandlerFileUrl)
     if (!proxyHandlerFile.exists()) proxyHandlerFile.createNewFile()
     proxyHandlerFile.writeText(getProxyHander(it))
+  }
+}
+
+fun getTypeFullSimpleName(type: KType): String {
+  val typeName = type.jvmErasure.simpleName!!
+
+  val generics = type.arguments.joinToString(",") { getTypeFullSimpleName(it.type!!) }
+
+  return if (generics.isEmpty()) {
+    typeName
+  } else {
+    "$typeName<$generics>"
   }
 }
 
@@ -79,7 +89,7 @@ class ${clazz.simpleName}VertxEBProxy constructor(private val vertx: Vertx, priv
 
 fun genMethod(clazz: KClass<*>): String = clazz.declaredFunctions.joinToString("") {
   """
-  override suspend fun ${it.name}(${genArgs(it)}):${it.returnType.jvmErasure.simpleName} {
+  override suspend fun ${it.name}(${genArgs(it)}):${getTypeFullSimpleName(it.returnType)} {
     val jsonArgs = jsonObjectOf(${putJson(it)})
     return getEventBusReplyValue("${it.name}", jsonArgs)
   }
@@ -87,7 +97,7 @@ fun genMethod(clazz: KClass<*>): String = clazz.declaredFunctions.joinToString("
 }
 
 private fun genArgs(function: KFunction<*>): String = function.valueParameters.joinToString(", ") {
-  "${it.name}:${it.type.jvmErasure.simpleName}"
+  "${it.name}:${getTypeFullSimpleName(it.type)}"
 }
 
 private fun putJson(function: KFunction<*>): String = function.valueParameters.joinToString(", ") {
@@ -207,6 +217,8 @@ fun getJsonGetStr(type: KType, key: String): String = when (type.jvmErasure) {
   Float::class -> "json.getFloat(\"$key\")"
   Double::class -> "json.getDouble(\"$key\")"
   String::class -> "json.getString(\"$key\")"
+  List::class -> "json.getJsonArray(\"$key\").list as ${getTypeFullSimpleName(type)}"
+  Map::class -> "json.getJsonObject(\"$key\").map as ${getTypeFullSimpleName(type)}"
   JsonObject::class -> "json.getJsonObject(\"$key\")"
   JsonArray::class -> "json.getJsonArray(\"$key\")"
   else -> " type" + type.jvmErasure.jvmName + " is not found!!!"

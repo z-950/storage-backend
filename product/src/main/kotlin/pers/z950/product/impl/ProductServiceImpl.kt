@@ -3,14 +3,12 @@ package pers.z950.product.impl
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.sqlclient.Row
-import pers.z950.common.service.ServiceException
 import pers.z950.common.service.repository.PostgresRepositoryWrapper
 import pers.z950.common.sql.Column
 import pers.z950.common.sql.Sql
 import pers.z950.common.sql.Table
 import pers.z950.product.Product
 import pers.z950.product.ProductService
-import java.util.*
 
 class ProductServiceImpl : PostgresRepositoryWrapper(), ProductService {
   private object TABLE : Table("product") {
@@ -103,7 +101,23 @@ create table if not exists $TABLE (
     return TABLE.parse(row)
   }
 
-  override suspend fun patchProduct() {
-    TODO("Not yet implemented")
+  override suspend fun getAllProduct(): List<Product> {
+    val sql = Sql(TABLE).select()
+    val res = preparedQueryAwait(sql)
+
+    return res.map { TABLE.parse(it) }
+  }
+
+  override suspend fun reduceProducts(map: Map<String, Int>) {
+    safeSync { transaction ->
+      map.forEach { (id, num) ->
+        val sql = Sql(TABLE).apply {
+          update()
+          set("${TABLE.number} = (${TABLE.number minus num})")
+          where { TABLE.id eq id }
+        }
+        transaction.preparedQueryAwait(sql.get(), sql.tuple)
+      }
+    }
   }
 }

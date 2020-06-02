@@ -22,6 +22,11 @@ class Sql<T : Table>(private val table: T) {
     return this
   }
 
+  fun count(): Sql<T> {
+    sql += "select count(*) from $table "
+    return this
+  }
+
   fun count(vararg columns: Column): Sql<T> {
     sql += "select count(${columns.joinToString(",")}) from $table "
     return this
@@ -37,19 +42,29 @@ class Sql<T : Table>(private val table: T) {
 
   /**
    * Insert into
+   * if value is List, call toTypedArray
    */
   fun insert(vararg pairs: Pair<Column, Any>): Sql<T> {
     val fieldNames = pairs.joinToString(",") { "${it.first}" }
     val values = pairs.joinToString(",") { "$${index++}" }
     pairs.forEach { (_, value) ->
-      tuple.addValue(value)
+      if (value is Array<*>) {
+        tuple.addValues(value)
+      } else {
+        tuple.addValue(value)
+      }
     }
     sql = "insert into $table ($fieldNames) values (${values}) "
     return this
   }
 
+  fun returning(column: Column): Sql<T> {
+    sql += "returning $column "
+    return this
+  }
+
   fun onConflictDoNoting(column: Column): Sql<T> {
-    sql += "on conflict(${column}) do nothing "
+    sql += "on conflict($column) do nothing "
     return this
   }
 
@@ -58,11 +73,20 @@ class Sql<T : Table>(private val table: T) {
    */
   fun set(vararg pairs: Pair<Column, Any>): Sql<T> {
     pairs.forEach { (_, value) ->
-      tuple.addValue(value)
+      if (value is Array<*>) {
+        tuple.addValues(value)
+      } else {
+        tuple.addValue(value)
+      }
     }
     val fieldNames = pairs.joinToString(",") { "${it.first} = $${index++}" }
     sql += "set $fieldNames "
 
+    return this
+  }
+
+  fun set(vararg strings: String): Sql<T> {
+    sql += "set ${strings.joinToString(",")} "
     return this
   }
 
@@ -145,6 +169,14 @@ class Sql<T : Table>(private val table: T) {
     tuple.addValue(limit).addValue(offset)
     sql += "limit $${index++} offset $${index++} "
     return this
+  }
+
+  /**
+   * operator
+   */
+  infix fun Column.minus(value: Any): String {
+    tuple.addValue(value)
+    return "$this - $${index++}"
   }
 
   /**

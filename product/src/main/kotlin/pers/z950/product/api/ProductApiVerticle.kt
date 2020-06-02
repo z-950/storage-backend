@@ -53,7 +53,7 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
     @Error(400, "required")
     val productId = ctx.pathParam("productId")
     // todo
-    service.patchProduct()
+//    service.patchProduct()
 
     @Success
     ctx.response(null)
