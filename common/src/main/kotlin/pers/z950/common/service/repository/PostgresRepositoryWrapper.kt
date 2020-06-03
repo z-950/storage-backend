@@ -24,8 +24,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
 
-abstract class PostgresRepositoryWrapper : AsyncInit,
-  Close {
+abstract class PostgresRepositoryWrapper : AsyncInit, Close {
   companion object {
     const val DEFAULT_DATABASE = "postgres"
 

@@ -5,9 +5,9 @@ import com.fasterxml.jackson.core.type.TypeReference
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.json.JsonObject
-import io.vertx.core.json.jackson.DatabindCodec
 import io.vertx.kotlin.core.eventbus.requestAwait
 import io.vertx.kotlin.core.json.jsonObjectOf
+import pers.z950.common.Mapper
 
 class ProductServiceVertxEBProxy constructor(private val vertx: Vertx, private val address: String, private val options: DeliveryOptions) : ProductService {
   private var closed: Boolean = false
@@ -18,7 +18,7 @@ class ProductServiceVertxEBProxy constructor(private val vertx: Vertx, private v
     closed = true
   }
 
-  private inline fun <reified T> unwrap(res: String): T = DatabindCodec.mapper().readValue(res, object : TypeReference<T>() {})
+  private inline fun <reified T> unwrap(res: String): T = Mapper.jackson.readValue(res, object : TypeReference<T>() {})
 
   private suspend inline fun <reified T> getEventBusReplyValue(action: String, jsonArgs: JsonObject): T {
     if (closed) {

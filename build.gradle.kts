@@ -7,7 +7,7 @@ buildscript {
   }
 
   dependencies {
-    classpath(kotlin("gradle-plugin", version = "1.3.71"))
+    classpath(kotlin("gradle-plugin", version = "1.3.72"))
   }
 }
 
@@ -39,7 +39,7 @@ subprojects {
   }
 
   ext {
-    set("kotlinVersion", "1.3.71")
+    set("kotlinVersion", "1.3.72")
     set("kotlinxCoroutinesVersion", "1.3.5")
     set("vertxVersion", "3.9.0")
   }

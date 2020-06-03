@@ -7,7 +7,6 @@ import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.http.CookieSameSite
 import io.vertx.core.json.DecodeException
-import io.vertx.core.json.jackson.DatabindCodec
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 import io.vertx.ext.auth.shiro.ShiroAuth
@@ -23,6 +22,7 @@ import io.vertx.kotlin.core.json.jsonObjectOf
 import kotlinx.coroutines.launch
 import org.apache.shiro.authc.IncorrectCredentialsException
 import org.apache.shiro.authc.UnknownAccountException
+import pers.z950.common.Mapper
 
 abstract class ApiVerticle : MicroServiceVerticle() {
   companion object {
@@ -201,5 +201,5 @@ abstract class ApiVerticle : MicroServiceVerticle() {
     .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
     .end(jsonStringify(value))
 
-  private fun <T> jsonStringify(value: T) = DatabindCodec.mapper().writeValueAsString(value)
+  private fun <T> jsonStringify(value: T) = Mapper.jackson.writeValueAsString(value)
 }

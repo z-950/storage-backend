@@ -5,12 +5,12 @@ import pers.z950.common.service.ServiceException
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import io.vertx.core.json.jackson.DatabindCodec
 import io.vertx.core.logging.LoggerFactory
 import io.vertx.kotlin.coroutines.dispatcher
 import io.vertx.serviceproxy.ProxyHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import pers.z950.common.Mapper
 
 class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val service: ProductService, topLevel: Boolean = true, private val timeoutSeconds: Long = 300) : ProxyHandler() {
   private val log = LoggerFactory.getLogger(ProductServiceVertxProxyHandler::javaClass.name)
@@ -58,7 +58,7 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
     log.error("proxy handler error", t)
   }
 
-  private fun wrap(res: Any?) = DatabindCodec.mapper().writeValueAsString(res)
+  private fun wrap(res: Any?) = Mapper.jackson.writeValueAsString(res)
 
   private fun Message<JsonObject>.response(res: Any?) = reply(wrap(res))
 
