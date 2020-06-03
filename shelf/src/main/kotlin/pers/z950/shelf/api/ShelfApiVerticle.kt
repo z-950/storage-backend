@@ -10,8 +10,9 @@ import pers.z950.common.api.Controller
 import pers.z950.common.api.Success
 import pers.z950.product.Product
 import pers.z950.product.ProductService
+import pers.z950.shelf.ShelfService
 
-class ShelfApiVerticle : ApiVerticle() {
+class ShelfApiVerticle(val service:ShelfService) : ApiVerticle() {
   companion object {
     const val SERVICE_NAME = "shelf-rest-api"
   }
@@ -38,24 +39,16 @@ class ShelfApiVerticle : ApiVerticle() {
   @Controller
   private fun getShelfList(ctx: RoutingContext) {
     @Success
-    ctx.response(hackGetShelfList())
+    ctx.response(service.getShelfList())
   }
 
   @Controller
   private suspend fun updateShelf(ctx: RoutingContext) {
     val body = ctx.bodyAsJsonArray
 
-    hackUpdateShelf(body.map { (it as JsonObject).mapTo(Product::class.java) })
+    service.updateShelf(body.map { (it as JsonObject).mapTo(Product::class.java) })
 
     @Success
     ctx.response(null)
-  }
-
-  private fun hackGetShelfList() = listOf("A", "B", "C", "D")
-
-  private suspend fun hackUpdateShelf(list:List<Product>){
-    val productService = ServiceProxyBuilder(vertx).setAddress("service.product").build(ProductService::class.java)
-
-    productService.updateProducts(list)
   }
 }

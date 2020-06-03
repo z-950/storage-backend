@@ -55,7 +55,19 @@ class GatewayApiVerticle : ApiVerticle() {
         .setResetTimeout(cbOptions.getLong("reset-timeout", 30_000L))
     )
 
-    createHttpServer(getRootRouter(), config.getString("host", "localhost"), config.getInteger("port", 8888))
+    // notice: not auto reload properties
+    shiroAuth = getAuthProvider()
+
+    val rootRouter = Router.router(vertx)
+    val apiRouter = Router.router(vertx).apply { dispatch(this) }
+
+    // api proxy
+    rootRouter.mountSubRouter(PROXY_PATH, apiRouter)
+
+    // static content (for local)
+    rootRouter.route("/*").handler(StaticHandler.create())
+
+    createHttpServer(rootRouter, config.getString("host", "localhost"), config.getInteger("port", 8888))
   }
 
   override suspend fun stop() {
@@ -63,43 +75,20 @@ class GatewayApiVerticle : ApiVerticle() {
     super.stop()
   }
 
-  private suspend fun getRootRouter(): Router {
-    val rootRouter = Router.router(vertx)
-
-    // api proxy
-    rootRouter.mountSubRouter(PROXY_PATH, getApiRouter())
-
-    // static content (for local)
-    rootRouter.route("/*").handler(StaticHandler.create())
-
-    return rootRouter
-  }
-
-  private suspend fun getApiRouter(): Router {
-    val apiRouter = Router.router(vertx)
-
-    // notice: not auto reload properties
-    shiroAuth = getAuthProvider()
-
+  private fun dispatch(router: Router){
     // body handler todo: upload file?
-    apiRouter.route().handler(BodyHandler.create())
+    router.route().handler(BodyHandler.create())
     // cookie and session handler
-    enableClusteredSession(apiRouter, shiroAuth)
+    enableClusteredSession(router, shiroAuth)
 
     // auth
-    authDispatch(apiRouter)
-
-    // api dispatch
-    apiRouter.route().superHandler { dispatchRequest(it) }
-
-    return apiRouter
-  }
-
-  private suspend fun authDispatch(router: Router) {
     val authPath = "/session"
     router.post(authPath).superHandler { authenticate(it) }
     router.get(authPath).superHandler { info(it) }
     router.delete(authPath).superHandler { logout(it) }
+
+    // service api dispatch
+    router.route().superHandler { dispatchRequest(it) }
   }
 
   @Controller
@@ -125,7 +114,7 @@ class GatewayApiVerticle : ApiVerticle() {
             if (client != null) {
               val httpClient = discovery.getReference(client).get<HttpClient>()
               @Error(500 - 599, "see inside") @Success("see inside")
-              reverseProxy(ctx, pathNew, httpClient, it)
+              doReverseProxy(ctx, pathNew, httpClient, it)
             } else {
               @Error(404, "service not found")
               notFoundHandler(ctx)
@@ -141,7 +130,7 @@ class GatewayApiVerticle : ApiVerticle() {
   }
 
   @Controller
-  private suspend fun reverseProxy(ctx: RoutingContext, path: String, client: HttpClient, promise: Promise<Unit>) {
+  private suspend fun doReverseProxy(ctx: RoutingContext, path: String, client: HttpClient, promise: Promise<Unit>) {
     val realClient = WebClient.wrap(client, WebClientOptions().setFollowRedirects(false))
     val req = realClient.request(ctx.request().method(), path).apply {
       // set headers

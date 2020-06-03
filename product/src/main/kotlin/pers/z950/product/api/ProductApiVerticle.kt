@@ -35,7 +35,6 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
 
   private fun dispatch(router: Router) {
     router.get("/:productId").superHandler { get(it) }
-//    router.patch("/:productId").superHandler { patch(it) }
   }
 
   @Controller
@@ -46,16 +45,5 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
 
     @Success
     ctx.response(product)
-  }
-
-  @Controller
-  private suspend fun patch(ctx: RoutingContext) {
-    @Error(400, "required")
-    val productId = ctx.pathParam("productId")
-    // todo
-//    service.patchProduct()
-
-    @Success
-    ctx.response(null)
   }
 }

@@ -20,7 +20,7 @@ class OrderServiceImpl : PostgresRepositoryWrapper(), OrderService {
     val id = Column("id")
     val productList = Column("product_list")
     val numberList = Column("number_list")
-    val isChecked = Column("id_checked")
+    val isChecked = Column("is_checked")
     val checker = Column("checker")
 
     fun parse(row: Row) = Order(
