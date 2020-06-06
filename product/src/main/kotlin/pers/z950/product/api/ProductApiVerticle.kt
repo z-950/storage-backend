@@ -35,6 +35,7 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
 
   private fun dispatch(router: Router) {
     router.get("/:productId").superHandler { get(it) }
+    router.post("/put").superHandler { post(it) }
   }
 
   @Controller
@@ -45,5 +46,19 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
 
     @Success
     ctx.response(product)
+  }
+
+  @Controller
+  private suspend fun post(ctx: RoutingContext) {
+    val body = ctx.bodyAsJson
+
+    @Error(400, "required")
+    val id = body.getString("id")
+    val number = body.getInteger("number")
+
+    val res = service.putProduct(id,number)
+
+    @Success
+    ctx.response(res)
   }
 }

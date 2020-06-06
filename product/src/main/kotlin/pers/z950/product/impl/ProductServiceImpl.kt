@@ -1,8 +1,11 @@
 package pers.z950.product.impl
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.sqlclient.Row
+import pers.z950.common.service.ServiceException
 import pers.z950.common.service.repository.PostgresRepositoryWrapper
 import pers.z950.common.sql.Column
 import pers.z950.common.sql.Sql
@@ -131,4 +134,57 @@ create table if not exists $TABLE (
       }
     }
   }
+
+  private suspend fun increaseProduct(id: String, number: Int) {
+    val sql = Sql(TABLE).apply {
+      update().set("${TABLE.number} = (${TABLE.number plus number})").where { TABLE.id eq id }
+    }
+    preparedQueryAwait(sql)
+  }
+
+  private suspend fun putNewProduct(product: Product) {
+    val sql = Sql(TABLE).insert(
+      TABLE.id to product.id,
+      TABLE.shelfId to product.shelfId,
+      TABLE.regionId to product.regionId,
+      TABLE.number to product.number
+    )
+    preparedQueryAwait(sql)
+  }
+
+  override suspend fun putProduct(id: String, number: Int): Product {
+    val countSql = Sql(TABLE).select().where { with(it) { TABLE.id eq id } }
+    val res = preparedQueryAwait(countSql)
+
+    if (res.size() != 0) {
+      increaseProduct(id, number)
+
+      return TABLE.parse(res.first()).let { Product(it.id, it.shelfId, it.regionId, it.number + number) }
+    } else {
+      val shelfRegionList = hackGetAllShelfRegionList()
+
+      shelfRegionList.map { Pair(it.key, (it.value as JsonArray).map { r -> r as Int }) }
+        .forEach { (shelfId, regionList) ->
+          val querySql = Sql(TABLE).select(TABLE.regionId).where { with(it) { TABLE.shelfId eq shelfId } }
+          val putRegionList = preparedQueryAwait(querySql).map { it.getInteger(TABLE.regionId.name) }
+          val emptyRegionList = regionList.minus(putRegionList)
+          if (emptyRegionList.isNotEmpty()) {
+            val product = Product(id, shelfId, emptyRegionList.first(), number)
+            putNewProduct(product)
+
+            return product
+          }
+        }
+      // todo: no emptyRegion
+      throw ServiceException.ERROR
+    }
+  }
+
+  // todo: should in shelf service
+  private fun hackGetAllShelfRegionList() = jsonObjectOf(
+    "A" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+    "B" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+    "C" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+    "D" to listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+  )
 }

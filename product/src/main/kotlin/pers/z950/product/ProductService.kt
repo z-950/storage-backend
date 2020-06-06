@@ -7,4 +7,5 @@ interface ProductService : Close {
   suspend fun getAllProduct(): List<Product>
   suspend fun reduceProducts(map: Map<String, Int>)
   suspend fun updateProducts(list: List<Product>)
+  suspend fun putProduct(id: String, number: Int): Product
 }

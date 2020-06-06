@@ -86,6 +86,14 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
                 )
               )
             }
+            "putProduct" -> {
+              msg.response(
+                service.putProduct(
+                  json.getString("id"),
+                  json.getInteger("number")
+                )
+              )
+            }
             "reduceProducts" -> {
               msg.response(
                 service.reduceProducts(

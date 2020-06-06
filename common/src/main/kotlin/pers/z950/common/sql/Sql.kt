@@ -179,6 +179,11 @@ class Sql<T : Table>(private val table: T) {
     return "$this - $${index++}"
   }
 
+  infix fun Column.plus(value: Any): String {
+    tuple.addValue(value)
+    return "$this + $${index++}"
+  }
+
   /**
    * Get sql.
    */
