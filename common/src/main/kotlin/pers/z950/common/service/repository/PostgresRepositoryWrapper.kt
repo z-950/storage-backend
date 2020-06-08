@@ -155,6 +155,8 @@ abstract class PostgresRepositoryWrapper : AsyncInit, Close {
     }
   }
 
+  suspend fun SqlClient.preparedQueryAwait(sql: Sql<out Table>) = this.preparedQueryAwait(sql.get(), sql.tuple)
+
   // export
   suspend fun queryAwait(sql: String) = pool.queryAwait(sql)
   suspend fun preparedQueryAwait(sql: String, tuple: Tuple) = pool.preparedQueryAwait(sql, tuple)

@@ -75,7 +75,7 @@ class GatewayApiVerticle : ApiVerticle() {
     super.stop()
   }
 
-  private fun dispatch(router: Router){
+  private fun dispatch(router: Router) {
     // body handler todo: upload file?
     router.route().handler(BodyHandler.create())
     // cookie and session handler
@@ -178,7 +178,10 @@ class GatewayApiVerticle : ApiVerticle() {
     val user = shiroAuth.authenticateAwait(jsonObjectOf("username" to username, "password" to password))
 
     ctx.setUser(user)
-    val role = hackGetRole()
+    val roleList = listOf("tourist", "worker", "customer")
+    val role = roleList.first { r ->
+      awaitResult<Boolean> { user.isAuthorised("role:$r", it) }
+    }
 
     @Success("user info")
     ctx.response(jsonObjectOf("id" to username, "role" to role))
@@ -225,7 +228,4 @@ class GatewayApiVerticle : ApiVerticle() {
   private suspend fun hackShiroAuthnForAuthz(role: String): User {
     return shiroAuth.authenticateAwait(jsonObjectOf("username" to role, "password" to role))
   }
-
-  // hack for get user role (worker only)
-  private fun hackGetRole() = "worker"
 }

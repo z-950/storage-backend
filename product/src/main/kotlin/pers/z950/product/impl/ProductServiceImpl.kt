@@ -119,7 +119,7 @@ create table if not exists $TABLE (
           set("${TABLE.number} = (${TABLE.number minus num})")
           where { TABLE.id eq id }
         }
-        transaction.preparedQueryAwait(sql.get(), sql.tuple)
+        transaction.preparedQueryAwait(sql)
       }
     }
   }
@@ -130,7 +130,7 @@ create table if not exists $TABLE (
         val sql = Sql(TABLE).update()
           .set(TABLE.shelfId to product.shelfId, TABLE.regionId to product.regionId, TABLE.number to product.number)
           .where { with(it) { TABLE.id eq product.id } }
-        transaction.preparedQueryAwait(sql.get(), sql.tuple)
+        transaction.preparedQueryAwait(sql)
       }
     }
   }
@@ -175,7 +175,7 @@ create table if not exists $TABLE (
             return product
           }
         }
-      // todo: no emptyRegion
+      // todo: no empty region
       throw ServiceException.ERROR
     }
   }

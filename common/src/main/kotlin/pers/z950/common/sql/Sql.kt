@@ -3,7 +3,6 @@ package pers.z950.common.sql
 import io.vertx.sqlclient.Tuple
 import io.vertx.sqlclient.impl.ListTuple
 
-// todo: handle null
 class Sql<T : Table>(private val table: T) {
   private var sql: String = ""
   private var index: Int = 1
@@ -68,6 +67,11 @@ class Sql<T : Table>(private val table: T) {
     return this
   }
 
+  fun forUpdate(): Sql<T> {
+    sql += "for update "
+    return this
+  }
+
   /**
    * Set every field when update.
    */
@@ -106,16 +110,20 @@ class Sql<T : Table>(private val table: T) {
     return this
   }
 
-  infix fun Column.eq(value: Any): Sql<T> {
+  infix fun Column.eq(value: Any): Column {
     tuple.addValue(value)
     sql += "$this = $${index++} "
-    return this@Sql
+    return this
   }
 
-  infix fun Column.like(value: Any): Sql<T> {
+  infix fun Column.like(value: Any): Column {
     tuple.addValue(value)
     sql += "$this like $${index++} "
-    return this@Sql
+    return this
+  }
+
+  fun Column.isNull(): String {
+    return "$this is null "
   }
 
   /**
@@ -132,9 +140,13 @@ class Sql<T : Table>(private val table: T) {
   /**
    * and
    */
-  infix fun and(key: Column): Column {
+  infix fun Column.and(key: Column): Column {
     sql += "and "
     return key
+  }
+
+  infix fun Column.and(str: String) {
+    sql += "and $str"
   }
 
   /**
