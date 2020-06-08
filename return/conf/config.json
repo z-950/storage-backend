@@ -6,11 +6,11 @@
       "port": 5432,
       "user": "postgres",
       "password": "postgres",
-      "poolSize": 1
+      "poolSize": 5
     },
     "api": {
       "host": "0.0.0.0",
-      "port": 8991
+      "port": 8993
     }
   }
 }

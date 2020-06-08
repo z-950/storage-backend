@@ -2,6 +2,7 @@ package pers.z950.codegen
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import pers.z950.order.OrderService
 import pers.z950.product.ProductService
 import java.io.File
 import kotlin.reflect.*
@@ -11,7 +12,8 @@ import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.jvmName
 
 val list: List<KClass<*>> = listOf(
-  ProductService::class
+  ProductService::class,
+  OrderService::class
 )
 val baseDir = System.getProperty("user.dir") + "/src/main/kotlin"
 
@@ -207,7 +209,6 @@ fun genJsonPara(function: KFunction<*>): String = function.valueParameters.joinT
   getJsonGetStr(it.type, it.name!!)
 }
 
-// todo: map cast
 fun getJsonGetStr(type: KType, key: String): String = when (type.jvmErasure) {
   Boolean::class -> "json.getBoolean(\"$key\")"
   Int::class -> "json.getInteger(\"$key\")"
@@ -217,23 +218,28 @@ fun getJsonGetStr(type: KType, key: String): String = when (type.jvmErasure) {
   String::class -> "json.getString(\"$key\")"
   JsonObject::class -> "json.getJsonObject(\"$key\")"
   JsonArray::class -> "json.getJsonArray(\"$key\")"
+  Pair::class -> "json.getJsonObject(\"$key\").map.entries.first().toPair() as ${getTypeFullSimpleName(type)}}"
   List::class -> "json.getJsonArray(\"$key\")${getListCast(type)}"
   Map::class -> "json.getJsonObject(\"$key\").map${getMapCast(type)}"
   else -> " type" + type.jvmErasure.jvmName + " is not found!!!"
 }
 
-fun getListCast(type: KType): String = when (val generic = type.arguments.first().type!!) {
-  Boolean::class -> ".map{it as Boolean}"
-  Int::class -> ".map{it as Int}"
-  Long::class -> ".map{it as Long}"
-  Float::class -> ".map{it as Float}"
-  Double::class -> ".map{it as Double}"
-  String::class -> ".map{it as String}"
-  JsonObject::class -> ".map{it as JsonObject}"
-  JsonArray::class -> ".map{it as JsonArray}"
-  List::class -> ".map{(it as JsonArray)${getListCast(generic)}}"
-  Map::class -> ".map{it${getMapCast(generic)}}"
-  else -> ".map{(it as JsonObject).mapTo(${getTypeFullSimpleName(generic)}::class.java)}"
+fun getListCast(type: KType): String {
+  val generic = type.arguments.first().type!!
+  return when (generic.jvmErasure) {
+    Boolean::class -> ".map{it as Boolean}"
+    Int::class -> ".map{it as Int}"
+    Long::class -> ".map{it as Long}"
+    Float::class -> ".map{it as Float}"
+    Double::class -> ".map{it as Double}"
+    String::class -> ".map{it as String}"
+    JsonObject::class -> ".map{it as JsonObject}"
+    JsonArray::class -> ".map{it as JsonArray}"
+    Pair::class -> ".map{(it as JsonObject).map.entries.first().toPair() as ${getTypeFullSimpleName(generic)}}"
+    List::class -> ".map{(it as JsonArray)${getListCast(generic)}}"
+    Map::class -> ".map{it${getMapCast(generic)}}"
+    else -> ".map{(it as JsonObject).mapTo(${getTypeFullSimpleName(generic)}::class.java)}"
+  }
 }
 
-fun getMapCast(type: KType):String = " as ${getTypeFullSimpleName(type)}"
+fun getMapCast(type: KType): String = " as ${getTypeFullSimpleName(type)}"

@@ -1,11 +1,13 @@
 import kotlin.collections.listOf
 
 val projectList = listOf(
-  "product"
+  "product",
+  "order"
 )
 
 dependencies {
   implementation(kotlin("reflect"))
+  implementation(project(":common"))
 
   projectList.forEach {
     implementation(project(":$it"))
