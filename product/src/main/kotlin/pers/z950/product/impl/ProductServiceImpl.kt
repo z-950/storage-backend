@@ -111,17 +111,13 @@ create table if not exists $TABLE (
     return res.map { TABLE.parse(it) }
   }
 
-  override suspend fun reduceProducts(map: Map<String, Int>) {
-    safeSync { transaction ->
-      map.forEach { (id, num) ->
-        val sql = Sql(TABLE).apply {
-          update()
-          set("${TABLE.number} = (${TABLE.number minus num})")
-          where { TABLE.id eq id }
-        }
-        transaction.preparedQueryAwait(sql)
-      }
+  override suspend fun reduceProducts(id: String, number: Int) {
+    val sql = Sql(TABLE).apply {
+      update()
+      set("${TABLE.number} = (${TABLE.number minus number})")
+      where { TABLE.id eq id }
     }
+    preparedQueryAwait(sql)
   }
 
   override suspend fun updateProducts(list: List<Product>) {

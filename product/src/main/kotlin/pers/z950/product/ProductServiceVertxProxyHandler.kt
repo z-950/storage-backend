@@ -97,7 +97,8 @@ class ProductServiceVertxProxyHandler(private val vertx: Vertx, private val serv
             "reduceProducts" -> {
               msg.response(
                 service.reduceProducts(
-                  json.getJsonObject("map").map as Map<String,Int>
+                  json.getString("id"),
+                  json.getInteger("number")
                 )
               )
             }

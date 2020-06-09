@@ -140,6 +140,10 @@ class OrderServiceImpl : PostgresRepositoryWrapper(), OrderService {
   }
 
   override suspend fun checkOrder(uid: Int) {
+    val getSql = Sql(TABLE).select().where { with(it) { TABLE.uid eq uid } }
+    val res = preparedQueryAwait(getSql).first()
+    val data = TABLE.parse(res)
+    productService.reduceProducts(data.product, data.number)
     val sql = Sql(TABLE).update().set(TABLE.isChecked to true).where { with(it) { TABLE.uid eq uid } }
     preparedQueryAwait(sql)
   }
