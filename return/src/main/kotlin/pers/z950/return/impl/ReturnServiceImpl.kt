@@ -11,6 +11,7 @@ import pers.z950.common.sql.Column
 import pers.z950.common.sql.Sql
 import pers.z950.common.sql.Table
 import pers.z950.order.OrderService
+import pers.z950.product.ProductService
 
 class ReturnServiceImpl : PostgresRepositoryWrapper(), ReturnService {
   private object TABLE : Table("the_return") {
@@ -32,6 +33,7 @@ class ReturnServiceImpl : PostgresRepositoryWrapper(), ReturnService {
   }
 
   private lateinit var orderService: OrderService
+  private lateinit var productService: ProductService
 
   override suspend fun init(vertx: Vertx, config: JsonObject) {
     super.init(vertx, config)
@@ -49,6 +51,7 @@ class ReturnServiceImpl : PostgresRepositoryWrapper(), ReturnService {
     queryAwait(createTable)
 
     orderService = ServiceProxyBuilder(vertx).setAddress("service.order").build(OrderService::class.java)
+    productService = ServiceProxyBuilder(vertx).setAddress("service.product").build(ProductService::class.java)
   }
 
   private suspend fun create(): List<Return> {
@@ -77,6 +80,10 @@ class ReturnServiceImpl : PostgresRepositoryWrapper(), ReturnService {
   }
 
   override suspend fun checkReturn(uid: Int, worker: String) {
+    val getSql = Sql(TABLE).select().where { with(it) { TABLE.uid eq uid } }
+    val res = preparedQueryAwait(getSql).first()
+    val data = TABLE.parse(res)
+    productService.putProduct(data.productId, data.number)
     val sql =
       Sql(TABLE).update().set(TABLE.checker to worker, TABLE.isChecked to true).where { with(it) { TABLE.uid eq uid } }
     preparedQueryAwait(sql)
