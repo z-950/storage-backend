@@ -25,7 +25,7 @@ class ReturnApiVerticle(private val service: ReturnService) : ApiVerticle() {
     dispatch(router)
 
     val host = config.getString("host", "0.0.0.0")
-    val port = config.getInteger("port", 8993)
+    val port = config.getInteger("port", 8995)
     createHttpServer(router, host, port)
     publishHttpEndpoint(SERVICE_NAME, host, port)
   }
