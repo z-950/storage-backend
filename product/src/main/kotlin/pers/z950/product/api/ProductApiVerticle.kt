@@ -1,5 +1,6 @@
 package pers.z950.product.api
 
+import io.vertx.core.json.JsonObject
 import pers.z950.common.api.ApiVerticle
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
@@ -7,6 +8,7 @@ import io.vertx.ext.web.handler.BodyHandler
 import pers.z950.common.api.Controller
 import pers.z950.common.api.Error
 import pers.z950.common.api.Success
+import pers.z950.product.Product
 import pers.z950.product.ProductService
 
 class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
@@ -36,6 +38,7 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
   private fun dispatch(router: Router) {
     router.get("/:productId").superHandler { get(it) }
     router.post("/put").superHandler { post(it) }
+    router.patch("/").superHandler { updateShelf(it) }
   }
 
   @Controller
@@ -60,5 +63,15 @@ class ProductApiVerticle(private val service: ProductService) : ApiVerticle() {
 
     @Success
     ctx.response(res)
+  }
+
+  @Controller
+  private suspend fun updateShelf(ctx: RoutingContext) {
+    val body = ctx.bodyAsJsonArray
+
+    service.updateProducts(body.map { (it as JsonObject).mapTo(Product::class.java) })
+
+    @Success
+    ctx.response(null)
   }
 }

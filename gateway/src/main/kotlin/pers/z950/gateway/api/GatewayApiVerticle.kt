@@ -178,7 +178,7 @@ class GatewayApiVerticle : ApiVerticle() {
     val user = shiroAuth.authenticateAwait(jsonObjectOf("username" to username, "password" to password))
 
     ctx.setUser(user)
-    val roleList = listOf("tourist", "worker", "customer")
+    val roleList = listOf("tourist", "worker", "customer", "manager")
     val role = roleList.first { r ->
       awaitResult<Boolean> { user.isAuthorised("role:$r", it) }
     }

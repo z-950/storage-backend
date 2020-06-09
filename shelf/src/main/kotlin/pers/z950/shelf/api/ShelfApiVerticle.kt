@@ -33,22 +33,11 @@ class ShelfApiVerticle(val service:ShelfService) : ApiVerticle() {
 
   private fun dispatch(router: Router) {
     router.get("/list").superHandler { getShelfList(it) }
-    router.patch("/:id").superHandler { updateShelf(it) }
   }
 
   @Controller
   private fun getShelfList(ctx: RoutingContext) {
     @Success
     ctx.response(service.getShelfList())
-  }
-
-  @Controller
-  private suspend fun updateShelf(ctx: RoutingContext) {
-    val body = ctx.bodyAsJsonArray
-
-    service.updateShelf(body.map { (it as JsonObject).mapTo(Product::class.java) })
-
-    @Success
-    ctx.response(null)
   }
 }
